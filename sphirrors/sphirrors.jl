@@ -1,24 +1,13 @@
-## Packages
-
-using Pkg
-
-# Built-In
-
 using Plots
 using LinearAlgebra
 using Plots
 using Images
-using ImageView
-using ImageMagick
 using Colors
 
-# Custom
-
-include("sphirror_fcns.jl")
 
 # Parameters
 
-res = 512
+res = 2048
 
 # x - y def
 #=
@@ -65,24 +54,25 @@ b_L = length(b_int)
 
 # Initialize
 
-d = 2.0
-R = 1
-C = [vec([-R -R d]), vec([-R R d]), vec([R -R d]), vec([R R d]), vec([0, 0, d+R*sqrt(2)])]
-     #vec([-R -R d+2*R]), vec([-R R d+2*R]), vec([R -R d+2*R]), vec([R R d+2*R])]
-Rad = vec([R, R, R, R, R])#, R, R, R, R, R])
-#N = 25
-#(C, R) = rand_spheres_nonint(N, ([(-1, 1), (-1, 1), (4, 10)]), (0.5, 2.0))
+d = 1.5
+R = 1.0
+C = hcat(vec([-R, -R, d]),
+         vec([-R,  R, d]),
+         vec([ R, -R, d]),
+         vec([ R,  R, d]),
+         vec([0.0, 0.0, d + R*sqrt(2)]))
+Rad = fill(R, size(C, 2)) |> collect  # Vector{Float64}
 
-#scatter3(C[1, :], C[2, :], C[3, :])
+(Rh, Rh_RGB) = raytrace_area(x_int, y_int, C, Rad, 5000)
+plot(Rh_RGB)
 
 # Perform Raytracing
 
-(Rh, Rh_RGB) = raytrace_area(a_int, b_int, C, R, 5000)
+#(Rh, Rh_RGB) = raytrace_area(a_int, b_int, C, R, 5000)
 #Rh_RGB = 0.5*(Rh .+ 1)
 
 
 # Plot Result
 
-imshow(Rh_RGB)
 #heatmap(x_int, x_int, Rh[:, :, 3],
 #    color = cgrad([:blue, :white, :orange]), clim = (-1, 1))

@@ -5,31 +5,24 @@
 end=#
 
 function sph_reflect(o, rh, C, Rad)
-    # C dim 1: vector elements; C dim 2: sphere number
-    # R dim 1: radius of sphere n
-
     N = size(C, 2)
-
-    r = copy(o) # these will be overwritten if there are any valid collisions
+    r = copy(o)
     rh_new = copy(rh)
 
     rM = Vector{Float64}(undef, N)
-    for i = 1:N
-        c = C[i] .- o # position of sphere relative to o
+    for i in 1:N
+        c = C[:, i] .- o
         R = Rad[i]
 
-        cprM = dot(c, rh) # projection of sphere center onto ray direction
-
+        cprM = dot(c, rh)
         D = R^2 - norm(c - cprM*rh)^2
 
-        if D > 0 # Ray intersects sphere
-            rM[i] = cprM - sqrt(D) # Minus sign --> closest to o
+        if D > 0
+            rM[i] = cprM - sqrt(D)
+            if rM[i] <= 0
+                rM[i] = Inf
+            end
         else
-            rM[i] = Inf
-            continue
-        end
-
-        if rM[i] <= 0
             rM[i] = Inf
         end
     end
@@ -37,59 +30,50 @@ function sph_reflect(o, rh, C, Rad)
     (rM_min, rM_min_i) = findmin(rM)
 
     if rM_min != Inf
-        c_min = C[rM_min_i] # relative to global origin
+        c_min = C[:, rM_min_i]
         R_min = Rad[rM_min_i]
 
-        r = o + rM_min*rh # relative to global origin
-
-        n = (r .- c_min)/R_min
-        rh_new = rh - 2*dot(rh, n)*n
-    else
-        r = copy(o)
-        rh_new = copy(rh)
+        r = o .+ rM_min .* rh
+        n = (r .- c_min) ./ R_min
+        rh_new = rh .- 2*dot(rh, n).*n
     end
 
     return (r, rh_new)
-    # (o_new, rh_new)
 end
 
 function raytrace(o, rh, C, Rad, reflect_max)
-    # Om = (a, b) initial ray angle; a is ccw of xz plane, b is above xy plane
-    # rh = (x, y, z)
-
-    #(a, b) = Om
-    #rh = [sin(a), sin(b), sqrt(1 - (sin(a)^2 + sin(b)^2))]
-
-    #(x, y, z) = rh
-    #rh = cart_to_spherical(rh)
-
-    for i = 1:reflect_max
+    eps = 1e-8
+    for _ = 1:reflect_max
         (o_new, rh_new) = sph_reflect(o, rh, C, Rad)
-
         if all(o_new .== o)
             break
         else
-            o = copy(o_new)
-            rh = copy(rh_new)
+            o = o_new .+ eps .* rh_new
+            rh = rh_new
         end
     end
-
     return rh
 end
 
-function raytrace_area(x_int, y_int, C, Rad, reflect_max = 500)
-    x_L = length(x_int)
-    y_L = length(y_int)
+function raytrace_area(a_int, b_int, C, Rad, reflect_max = 500)
+    a_L = length(a_int)
+    b_L = length(b_int)
 
-    Rh = Array{Float64}(undef, x_L, y_L, 3)
-    Rh_RGB = Array{RGB{Float64}}(undef, x_L, y_L)
-    for i = 1:x_L
-        x = x_int[i]
-        for j = 1:y_L
-            y = y_int[j]
+    Rh = Array{Float64}(undef, a_L, b_L, 3)
+    Rh_RGB = Array{RGB{Float64}}(undef, a_L, b_L)
 
-            rh = [sin(x), sin(y), sqrt(1 - sin(x)^2 - sin(y)^2)]
-            Rh[i, j, :] = raytrace([0; 0; 0], rh, C, Rad, reflect_max)
+    for i in eachindex(a_int)
+        a = a_int[i]
+        for j in eachindex(b_int)
+            b = b_int[j]
+
+            # Perspective (pinhole) mapping
+            u = tan(a)
+            v = tan(b)
+            rh = [u, v, 1.0]
+            rh ./= norm(rh)
+
+            Rh[i, j, :] = raytrace([0.0, 0.0, 0.0], rh, C, Rad, reflect_max)
             Rh_ij_tuple = ((Rh[i, j, 1], Rh[i, j, 2], Rh[i, j, 3]) .+ 1) ./ 2
             Rh_RGB[i, j] = RGB{Float64}(Rh_ij_tuple[1], Rh_ij_tuple[2], Rh_ij_tuple[3])
         end
@@ -97,6 +81,8 @@ function raytrace_area(x_int, y_int, C, Rad, reflect_max = 500)
 
     return (Rh, Rh_RGB)
 end
+
+
 
 function rand_spheres_nonint(N, C_lim, R_lim)
     # C_lim is an array of 3 limit tuples

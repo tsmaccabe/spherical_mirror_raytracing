@@ -1,3 +1,3 @@
-include("init.jl")
-include("sphirror_fcns.jl")
-include("sphirrors.jl")
+include("src/init.jl")
+include("src/sphirror_fcns.jl")
+include("src/sphirrors.jl")

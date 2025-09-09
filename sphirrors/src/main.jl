@@ -4,33 +4,7 @@ using Plots
 using Images
 using Colors
 
-
-# Parameters
-
 res = 2048
-
-# x - y def
-#=
-x_res = res
-y_res = res
-N = x_res*y_res
-
-a_max = pi/4
-b_max = pi/4
-
-x_max = sin(a_max)
-y_max = sin(b_max)
-
-dx = 2*x_max/x_res
-dy = 2*y_max/y_res
-
-x_int = -x_max + dx/2:dx:x_max - dx/2
-y_int = -y_max + dy/2:dy:y_max - dy/2
-
-a_int = asin.(x_int)
-b_int = asin.(y_int)
-=#
-# a - b undef
 
 a_res = res
 b_res = res
@@ -52,8 +26,6 @@ y_int = sin.(b_int)
 a_L = length(a_int)
 b_L = length(b_int)
 
-# Initialize
-
 d = 1.2
 R = 1.0
 C = hcat(vec([-R, -R, d]),
@@ -64,15 +36,5 @@ C = hcat(vec([-R, -R, d]),
 Rad = fill(R, size(C, 2)) |> collect  # Vector{Float64}
 
 (Rh, Rh_RGB) = raytrace_area(x_int, y_int, C, Rad, 5000)
+
 plot(Rh_RGB)
-
-# Perform Raytracing
-
-#(Rh, Rh_RGB) = raytrace_area(a_int, b_int, C, R, 5000)
-#Rh_RGB = 0.5*(Rh .+ 1)
-
-
-# Plot Result
-
-#heatmap(x_int, x_int, Rh[:, :, 3],
-#    color = cgrad([:blue, :white, :orange]), clim = (-1, 1))

@@ -1,6 +1,6 @@
 SPHERICAL MIRROR FRACTAL GENERATOR
 
-This program generates fractal images using raytracing applied to systems of spherical mirrors.
+This program generates fractal images using raytracing applied to systems of spherical mirrors. It was written in Julia version 1.10.2.
 
 Run `run.jl` to use.
 
